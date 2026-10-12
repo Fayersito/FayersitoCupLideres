@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inscripción de Entrenador · Hoenn</title>
+<style>
+:root{--bg:#081421;--panel:#102438;--line:#27465d;--text:#edf7ff;--muted:#a8bfd0;--accent:#ffcb05;--blue:#2b78bd}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#173d5c,var(--bg) 55%);font-family:system-ui,Segoe UI,sans-serif;color:var(--text);padding:24px}
+main{max-width:900px;margin:auto}.hero{text-align:center;padding:18px 0 26px}.cover{display:block;width:min(100%,520px);max-height:240px;object-fit:contain;margin:0 auto 14px;border-radius:12px}.eyebrow{color:var(--accent);letter-spacing:.18em;text-transform:uppercase;font-size:.75rem;font-weight:800}h1{margin:.3rem 0;font-size:clamp(2rem,5vw,3rem)}.sub{color:var(--muted)}
+section{background:#102438ed;border:1px solid var(--line);border-radius:18px;padding:22px;margin:16px 0;box-shadow:0 15px 35px #0003}h2{font-size:1.15rem;margin:0 0 16px;color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:6px}.wide{grid-column:1/-1}label{font-size:.88rem;color:#c8dceb;font-weight:650}input,select,textarea{width:100%;padding:12px;border:1px solid #3b5d75;border-radius:10px;background:#091927;color:var(--text);font:inherit}input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}.hint,.status{font-size:.85rem;color:var(--muted);line-height:1.5}.team{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.slot{border:1px solid var(--line);padding:13px;border-radius:12px;background:#0b1d2c}.slot strong{display:block;margin-bottom:9px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}button{border:0;border-radius:11px;padding:13px 18px;font:inherit;font-weight:800;cursor:pointer}.primary{background:var(--accent);color:#17202b}.secondary{background:#1d496a;color:white}.primary:disabled{opacity:.55;cursor:wait}.status{margin-top:10px}.footer{text-align:center;color:var(--muted);font-size:.8rem;padding:12px}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:800;color:#fff;text-shadow:0 1px 1px #0006;letter-spacing:.02em}
+.slot .picked{margin-top:8px;min-height:22px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:.85rem}
+.slot .picked .pname{font-weight:700}
+.pool{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-height:320px;overflow:auto;padding:4px}
+.mon{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:#0b1d2c;color:var(--text);font-size:.8rem;font-weight:600;cursor:pointer}
+.mon:hover{border-color:var(--accent)}.mon.on{border-color:var(--accent);background:#2a3a14}.mon .num{color:var(--muted);font-weight:500}
+.mon:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:620px){body{padding:12px}.grid,.team{grid-template-columns:1fr}section{padding:16px}}
+</style></head>
+<body><main>
+<header class="hero"><img class="cover" src="portada.png" alt="Portada de la Liga Pokémon Hoenn"><div class="eyebrow">Liga Pokémon · Región Hoenn</div><h1>Inscripción de Entrenador</h1><p class="sub">Elige tu especialidad, prepara tu equipo y presenta tu candidatura a la Liga.</p></header>
+<form id="form">
+<section><h2>01 · Datos del entrenador</h2><div class="grid">
+<div class="field"><label for="trainer">Nombre de entrenador *</label><input id="trainer" name="trainer" maxlength="50" required placeholder="Ej. Fayersito"></div>
+<div class="field"><label for="age">Edad *</label><input id="age" name="age" type="number" min="1" max="120" required></div>
+<div class="field"><label for="town">Ciudad o pueblo de origen *</label><input id="town" name="town" maxlength="60" required placeholder="Ej. Pueblo Lavacalda"></div>
+<div class="field"><label for="contact">Contacto (opcional)</label><input id="contact" name="contact" maxlength="100" placeholder="Discord o correo"></div>
+</div></section>
+<section><h2>02 · Especialidad de gimnasio</h2><div class="grid">
+<div class="field"><label for="type">Tipo elegido *</label><select id="type" required><option value="">Primero elige un tipo…</option></select></div>
+<div class="field"><label for="gym">Gimnasio de Hoenn correspondiente</label><input id="gym" readonly placeholder="Se completará al elegir el tipo"></div>
+<div class="field wide"><p class="hint">La especialidad debe coincidir con uno de los tipos de gimnasio disponibles en este formulario: Roca, Lucha o Normal. Los Pokémon pueden ser monotipo o duales, pero deben tener el tipo elegido como uno de sus tipos.</p></div>
+</div></section>
+<section><h2>03 · Tu equipo Pokémon</h2><p class="hint">Selecciona hasta 6 Pokémon de las generaciones I, II y III. El listado se filtra por el tipo elegido. Puedes dejar huecos libres, pero debes seleccionar al menos uno. También puedes pulsar sobre los Pokémon del listado de abajo para añadirlos o quitarlos.</p>
+<div id="team" class="team"></div>
+<h2 style="margin-top:22px;font-size:1rem">Pokémon disponibles <span id="poolCount" class="hint"></span></h2>
+<div id="pool" class="pool"></div>
+<div id="dexStatus" class="status"></div>
+</section>
+<section><h2>04 · Protección de la tarjeta</h2><div class="grid">
+<div class="field"><label for="password">Contraseña de cifrado *</label><input id="password" type="password" minlength="8" required autocomplete="new-password" placeholder="Mínimo 8 caracteres"><span class="hint">Guárdala y comunícasela al organizador por un canal separado. Sin ella no podrá abrir el archivo.</span></div>
+<div class="field"><label for="password2">Repite la contraseña *</label><input id="password2" type="password" minlength="8" required autocomplete="new-password" placeholder="Repite la contraseña"></div>
+</div></section>
+<div class="actions"><button class="primary" id="submit" type="submit">🔐 Obtener tarjeta de inscripción</button><button class="secondary" type="reset">Limpiar formulario</button></div>
+<div id="message" class="status" role="status" aria-live="polite"></div>
+</form><div class="footer">Formulario local · La información solo se descarga en tu dispositivo. No se envía a ningún servidor.</div>
+</main>
+<script>
+const GYMS={
+"Rock":{es:"Roca",gym:"Gimnasio de Petra · Ciudad Férrica"},
+"Fighting":{es:"Lucha",gym:"Gimnasio de Marcial · Pueblo Azuliza"},
+
+
+"Normal":{es:"Normal",gym:"Gimnasio de Norman · Ciudad Petalia"},
+
+
+
+};
+const TYPE_ES={Normal:"Normal",Fire:"Fuego",Water:"Agua",Electric:"Eléctrico",Grass:"Planta",Ice:"Hielo",Fighting:"Lucha",Poison:"Veneno",Ground:"Tierra",Flying:"Volador",Psychic:"Psíquico",Bug:"Bicho",Rock:"Roca",Ghost:"Fantasma",Dragon:"Dragón",Dark:"Siniestro",Steel:"Acero",Fairy:"Hada"};
+const TYPE_COLOR={Normal:"#8d8d78",Fire:"#e8681f",Water:"#3d7fe0",Electric:"#c9a40a",Grass:"#4aa83a",Ice:"#4fb5b5",Fighting:"#b0302a",Poison:"#8e3f93",Ground:"#b8963f",Flying:"#7a8fe0",Psychic:"#e0457a",Bug:"#8aa314",Rock:"#9c8528",Ghost:"#614a8a",Dragon:"#5a2fe0",Dark:"#5a463a",Steel:"#8a8aa6",Fairy:"#d17ba0"};
+const CODE={NOR:"Normal",FIR:"Fire",WAT:"Water",ELE:"Electric",GRA:"Grass",ICE:"Ice",FIG:"Fighting",POI:"Poison",GRO:"Ground",FLY:"Flying",PSY:"Psychic",BUG:"Bug",ROC:"Rock",GHO:"Ghost",DRA:"Dragon",DAR:"Dark",STE:"Steel",FAI:"Fairy"};
+/* Pokédex nacional #1–#386 (Gen I–III), en orden. Formato: Nombre,Tipo1[,Tipo2]. Tipos actuales (incluye Hada). */
+const RAW=`Bulbasaur,GRA,POI
+Ivysaur,GRA,POI
+Venusaur,GRA,POI
+Charmander,FIR
+Charmeleon,FIR
+Charizard,FIR,FLY
+Squirtle,WAT
+Wartortle,WAT
+Blastoise,WAT
+Caterpie,BUG
+Metapod,BUG
+Butterfree,BUG,FLY
+Weedle,BUG,POI
+Kakuna,BUG,POI
+Beedrill,BUG,POI
+Pidgey,NOR,FLY
+Pidgeotto,NOR,FLY
+Pidgeot,NOR,FLY
+Rattata,NOR
+Raticate,NOR
+Spearow,NOR,FLY
+Fearow,NOR,FLY
+Ekans,POI
+Arbok,POI
+Pikachu,ELE
+Raichu,ELE
+Sandshrew,GRO
+Sandslash,GRO
+Nidoran♀,POI
+Nidorina,POI
+Nidoqueen,POI,GRO
+Nidoran♂,POI
+Nidorino,POI
+Nidoking,POI,GRO
+Clefairy,FAI
+Clefable,FAI
+Vulpix,FIR
+Ninetales,FIR
+Jigglypuff,NOR,FAI
+Wigglytuff,NOR,FAI
+Zubat,POI,FLY
+Golbat,POI,FLY
+Oddish,GRA,POI
+Gloom,GRA,POI
+Vileplume,GRA,POI
+Paras,BUG,GRA
+Parasect,BUG,GRA
+Venonat,BUG,POI
+Venomoth,BUG,POI
+Diglett,GRO
+Dugtrio,GRO
+Meowth,NOR
+Persian,NOR
+Psyduck,WAT
+Golduck,WAT
+Mankey,FIG
+Primeape,FIG
+Growlithe,FIR
+Arcanine,FIR
+Poliwag,WAT
+Poliwhirl,WAT
+Poliwrath,WAT,FIG
+Abra,PSY
+Kadabra,PSY
+Alakazam,PSY
+Machop,FIG
+Machoke,FIG
+Machamp,FIG
+Bellsprout,GRA,POI
+Weepinbell,GRA,POI
+Victreebel,GRA,POI
+Tentacool,WAT,POI
+Tentacruel,WAT,POI
+Geodude,ROC,GRO
+Graveler,ROC,GRO
+Golem,ROC,GRO
+Ponyta,FIR
+Rapidash,FIR
+Slowpoke,WAT,PSY
+Slowbro,WAT,PSY
+Magnemite,ELE,STE
+Magneton,ELE,STE
+Farfetch'd,NOR,FLY
+Doduo,NOR,FLY
+Dodrio,NOR,FLY
+Seel,WAT
+Dewgong,WAT,ICE
+Grimer,POI
+Muk,POI
+Shellder,WAT
+Cloyster,WAT,ICE
+Gastly,GHO,POI
+Haunter,GHO,POI
+Gengar,GHO,POI
+Onix,ROC,GRO
+Drowzee,PSY
+Hypno,PSY
+Krabby,WAT
+Kingler,WAT
+Voltorb,ELE
+Electrode,ELE
+Exeggcute,GRA,PSY
+Exeggutor,GRA,PSY
+Cubone,GRO
+Marowak,GRO
+Hitmonlee,FIG
+Hitmonchan,FIG
+Lickitung,NOR
+Koffing,POI
+Weezing,POI
+Rhyhorn,GRO,ROC
+Rhydon,GRO,ROC
+Chansey,NOR
+Tangela,GRA
+Kangaskhan,NOR
+Horsea,WAT
+Seadra,WAT
+Goldeen,WAT
+Seaking,WAT
+Staryu,WAT
+Starmie,WAT,PSY
+Mr. Mime,PSY,FAI
+Scyther,BUG,FLY
+Jynx,ICE,PSY
+Electabuzz,ELE
+Magmar,FIR
+Pinsir,BUG
+Tauros,NOR
+Magikarp,WAT
+Gyarados,WAT,FLY
+Lapras,WAT,ICE
+Ditto,NOR
+Eevee,NOR
+Vaporeon,WAT
+Jolteon,ELE
+Flareon,FIR
+Porygon,NOR
+Omanyte,ROC,WAT
+Omastar,ROC,WAT
+Kabuto,ROC,WAT
+Kabutops,ROC,WAT
+Aerodactyl,ROC,FLY
+Snorlax,NOR
+Articuno,ICE,FLY
+Zapdos,ELE,FLY
+Moltres,FIR,FLY
+Dratini,DRA
+Dragonair,DRA
+Dragonite,DRA,FLY
+Mewtwo,PSY
+Mew,PSY
+Chikorita,GRA
+Bayleef,GRA
+Meganium,GRA
+Cyndaquil,FIR
+Quilava,FIR
+Typhlosion,FIR
+Totodile,WAT
+Croconaw,WAT
+Feraligatr,WAT
+Sentret,NOR
+Furret,NOR
+Hoothoot,NOR,FLY
+Noctowl,NOR,FLY
+Ledyba,BUG,FLY
+Ledian,BUG,FLY
+Spinarak,BUG,POI
+Ariados,BUG,POI
+Crobat,POI,FLY
+Chinchou,WAT,ELE
+Lanturn,WAT,ELE
+Pichu,ELE
+Cleffa,FAI
+Igglybuff,NOR,FAI
+Togepi,FAI
+Togetic,FAI,FLY
+Natu,PSY,FLY
+Xatu,PSY,FLY
+Mareep,ELE
+Flaaffy,ELE
+Ampharos,ELE
+Bellossom,GRA
+Marill,WAT,FAI
+Azumarill,WAT,FAI
+Sudowoodo,ROC
+Politoed,WAT
+Hoppip,GRA,FLY
+Skiploom,GRA,FLY
+Jumpluff,GRA,FLY
+Aipom,NOR
+Sunkern,GRA
+Sunflora,GRA
+Yanma,BUG,FLY
+Wooper,WAT,GRO
+Quagsire,WAT,GRO
+Espeon,PSY
+Umbreon,DAR
+Murkrow,DAR,FLY
+Slowking,WAT,PSY
+Misdreavus,GHO
+Unown,PSY
+Wobbuffet,PSY
+Girafarig,NOR,PSY
+Pineco,BUG
+Forretress,BUG,STE
+Dunsparce,NOR
+Gligar,GRO,FLY
+Steelix,STE,GRO
+Snubbull,FAI
+Granbull,FAI
+Qwilfish,WAT,POI
+Scizor,BUG,STE
+Shuckle,BUG,ROC
+Heracross,BUG,FIG
+Sneasel,DAR,ICE
+Teddiursa,NOR
+Ursaring,NOR
+Slugma,FIR
+Magcargo,FIR,ROC
+Swinub,ICE,GRO
+Piloswine,ICE,GRO
+Corsola,WAT,ROC
+Remoraid,WAT
+Octillery,WAT
+Delibird,ICE,FLY
+Mantine,WAT,FLY
+Skarmory,STE,FLY
+Houndour,DAR,FIR
+Houndoom,DAR,FIR
+Kingdra,WAT,DRA
+Phanpy,GRO
+Donphan,GRO
+Porygon2,NOR
+Stantler,NOR
+Smeargle,NOR
+Tyrogue,FIG
+Hitmontop,FIG
+Smoochum,ICE,PSY
+Elekid,ELE
+Magby,FIR
+Miltank,NOR
+Blissey,NOR
+Raikou,ELE
+Entei,FIR
+Suicune,WAT
+Larvitar,ROC,GRO
+Pupitar,ROC,GRO
+Tyranitar,ROC,DAR
+Lugia,PSY,FLY
+Ho-Oh,FIR,FLY
+Celebi,PSY,GRA
+Treecko,GRA
+Grovyle,GRA
+Sceptile,GRA
+Torchic,FIR
+Combusken,FIR,FIG
+Blaziken,FIR,FIG
+Mudkip,WAT
+Marshtomp,WAT,GRO
+Swampert,WAT,GRO
+Poochyena,DAR
+Mightyena,DAR
+Zigzagoon,NOR
+Linoone,NOR
+Wurmple,BUG
+Silcoon,BUG
+Beautifly,BUG,FLY
+Cascoon,BUG
+Dustox,BUG,POI
+Lotad,WAT,GRA
+Lombre,WAT,GRA
+Ludicolo,WAT,GRA
+Seedot,GRA
+Nuzleaf,GRA,DAR
+Shiftry,GRA,DAR
+Taillow,NOR,FLY
+Swellow,NOR,FLY
+Wingull,WAT,FLY
+Pelipper,WAT,FLY
+Ralts,PSY,FAI
+Kirlia,PSY,FAI
+Gardevoir,PSY,FAI
+Surskit,BUG,WAT
+Masquerain,BUG,FLY
+Shroomish,GRA
+Breloom,GRA,FIG
+Slakoth,NOR
+Vigoroth,NOR
+Slaking,NOR
+Nincada,BUG,GRO
+Ninjask,BUG,FLY
+Shedinja,BUG,GHO
+Whismur,NOR
+Loudred,NOR
+Exploud,NOR
+Makuhita,FIG
+Hariyama,FIG
+Azurill,NOR,FAI
+Nosepass,ROC
+Skitty,NOR
+Delcatty,NOR
+Sableye,DAR,GHO
+Mawile,STE,FAI
+Aron,STE,ROC
+Lairon,STE,ROC
+Aggron,STE,ROC
+Meditite,FIG,PSY
+Medicham,FIG,PSY
+Electrike,ELE
+Manectric,ELE
+Plusle,ELE
+Minun,ELE
+Volbeat,BUG
+Illumise,BUG
+Roselia,GRA,POI
+Gulpin,POI
+Swalot,POI
+Carvanha,WAT,DAR
+Sharpedo,WAT,DAR
+Wailmer,WAT
+Wailord,WAT
+Numel,FIR,GRO
+Camerupt,FIR,GRO
+Torkoal,FIR
+Spoink,PSY
+Grumpig,PSY
+Spinda,NOR
+Trapinch,GRO
+Vibrava,GRO,DRA
+Flygon,GRO,DRA
+Cacnea,GRA
+Cacturne,GRA,DAR
+Swablu,NOR,FLY
+Altaria,DRA,FLY
+Zangoose,NOR
+Seviper,POI
+Lunatone,ROC,PSY
+Solrock,ROC,PSY
+Barboach,WAT,GRO
+Whiscash,WAT,GRO
+Corphish,WAT
+Crawdaunt,WAT,DAR
+Baltoy,GRO,PSY
+Claydol,GRO,PSY
+Lileep,ROC,GRA
+Cradily,ROC,GRA
+Anorith,ROC,BUG
+Armaldo,ROC,BUG
+Feebas,WAT
+Milotic,WAT
+Castform,NOR
+Kecleon,NOR
+Shuppet,GHO
+Banette,GHO
+Duskull,GHO
+Dusclops,GHO
+Tropius,GRA,FLY
+Chimecho,PSY
+Absol,DAR
+Wynaut,PSY
+Snorunt,ICE
+Glalie,ICE
+Spheal,ICE,WAT
+Sealeo,ICE,WAT
+Walrein,ICE,WAT
+Clamperl,WAT
+Huntail,WAT
+Gorebyss,WAT
+Relicanth,WAT,ROC
+Luvdisc,WAT
+Bagon,DRA
+Shelgon,DRA
+Salamence,DRA,FLY
+Beldum,STE,PSY
+Metang,STE,PSY
+Metagross,STE,PSY
+Regirock,ROC
+Regice,ICE
+Registeel,STE
+Latias,DRA,PSY
+Latios,DRA,PSY
+Kyogre,WAT
+Groudon,GRO
+Rayquaza,DRA,FLY
+Jirachi,STE,PSY
+Deoxys,PSY`;
+const DEX=RAW.trim().split("\n").map((line,i)=>{const [name,...codes]=line.trim().split(",");return{id:i+1,name,types:codes.map(c=>CODE[c])}});
+const BY_ID=new Map(DEX.map(p=>[p.id,p]));
+
+const typeSelect=document.querySelector("#type"),gymInput=document.querySelector("#gym"),teamEl=document.querySelector("#team"),poolEl=document.querySelector("#pool"),poolCount=document.querySelector("#poolCount"),dexStatus=document.querySelector("#dexStatus"),message=document.querySelector("#message"),submit=document.querySelector("#submit");
+let team=Array(6).fill(null);
+const num=id=>"#"+String(id).padStart(3,"0");
+function chip(t){const s=document.createElement("span");s.className="chip";s.style.background=TYPE_COLOR[t]||"#555";s.textContent=TYPE_ES[t]||t;return s}
+for(const [key,val] of Object.entries(GYMS)){const o=document.createElement("option");o.value=key;o.textContent=val.es;typeSelect.append(o)}
+dexStatus.textContent=`Pokédex incluida: ${DEX.length} Pokémon de las generaciones I–III (disponible sin conexión).`;
+
+function available(){const t=typeSelect.value;return t?DEX.filter(p=>p.types.includes(t)):[]}
+
+function render(){
+ const list=available();
+ /* Equipo */
+ teamEl.innerHTML="";
+ for(let i=0;i<6;i++){
+  const wrap=document.createElement("div");wrap.className="slot";
+  const label=document.createElement("strong");label.textContent=`Hueco ${i+1}${i===0?" · obligatorio al menos 1":""}`;
+  const select=document.createElement("select");select.className="pokemon-choice";
+  select.add(new Option(typeSelect.value?"— Sin seleccionar —":"— Elige primero un tipo —",""));
+  list.forEach(p=>{
+   const opt=new Option(`${num(p.id)} ${p.name} · ${p.types.map(t=>TYPE_ES[t]).join(" / ")}`,p.id);
+   if(team.includes(p.id)&&team[i]!==p.id)opt.disabled=true;
+   select.add(opt);
+  });
+  select.disabled=!typeSelect.value;
+  select.value=team[i]??"";
+  select.addEventListener("change",()=>{team[i]=select.value?Number(select.value):null;message.textContent="";render()});
+  const picked=document.createElement("div");picked.className="picked";
+  const p=team[i]&&BY_ID.get(team[i]);
+  if(p){const n=document.createElement("span");n.className="pname";n.textContent=`${num(p.id)} ${p.name}`;picked.append(n);p.types.forEach(t=>picked.append(chip(t)))}
+  wrap.append(label,select,picked);teamEl.append(wrap);
+ }
+ /* Listado de disponibles */
+ poolEl.innerHTML="";
+ if(!typeSelect.value){poolCount.textContent="";const m=document.createElement("span");m.className="hint";m.textContent="Elige un tipo de gimnasio para ver los Pokémon disponibles.";poolEl.append(m);return}
+ poolCount.textContent=`· ${list.length} de tipo ${TYPE_ES[typeSelect.value]}`;
+ const full=team.every(Boolean);
+ list.forEach(p=>{
+  const b=document.createElement("button");b.type="button";b.className="mon"+(team.includes(p.id)?" on":"");
+  b.disabled=full&&!team.includes(p.id);
+  const n=document.createElement("span");n.className="num";n.textContent=num(p.id);
+  const nm=document.createElement("span");nm.textContent=p.name;
+  b.append(n,nm);p.types.forEach(t=>b.append(chip(t)));
+  b.addEventListener("click",()=>{
+   const idx=team.indexOf(p.id);
+   if(idx>=0)team[idx]=null;else{const free=team.indexOf(null);if(free>=0)team[free]=p.id}
+   message.textContent="";render();
+  });
+  poolEl.append(b);
+ });
+}
+typeSelect.addEventListener("change",()=>{gymInput.value=GYMS[typeSelect.value]?.gym||"";team=Array(6).fill(null);render()});
+render();
+
+function bytesToB64(bytes){let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s)}
+async function deriveKey(password,salt){const material=await crypto.subtle.importKey("raw",new TextEncoder().encode(password),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:310000,hash:"SHA-256"},material,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+document.querySelector("#form").addEventListener("submit",async e=>{
+ e.preventDefault();message.textContent="";
+ const password=document.querySelector("#password").value,password2=document.querySelector("#password2").value;
+ if(password.length<8){message.textContent="La contraseña debe tener al menos 8 caracteres.";return}
+ if(password!==password2){message.textContent="Las contraseñas no coinciden.";return}
+ const chosen=team.filter(Boolean);
+ if(!chosen.length){message.textContent="Selecciona al menos un Pokémon.";return}
+ if(new Set(chosen).size!==chosen.length){message.textContent="No puedes repetir Pokémon en el equipo.";return}
+ const chosenPokemon=chosen.map(id=>BY_ID.get(id));
+ if(chosenPokemon.some(p=>!p||!p.types.includes(typeSelect.value))){message.textContent="Todos los Pokémon deben tener el tipo elegido.";return}
+ submit.disabled=true;submit.textContent="Cifrando tarjeta…";
+ try{
+  const data={format:"HOENN-TRAINER-CARD",version:1,createdAt:new Date().toISOString(),trainer:{name:document.querySelector("#trainer").value.trim(),age:Number(document.querySelector("#age").value),town:document.querySelector("#town").value.trim(),contact:document.querySelector("#contact").value.trim()},specialty:{type:typeSelect.value,typeSpanish:GYMS[typeSelect.value].es,gym:GYMS[typeSelect.value].gym},team:chosenPokemon.map(p=>({id:p.id,name:p.name,types:p.types.map(t=>TYPE_ES[t]||t)}))};
+  const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),key=await deriveKey(password,salt);
+  const ciphertext=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,new TextEncoder().encode(JSON.stringify(data)));
+  const file={format:"HOENN-ENCRYPTED-TRAINER",version:1,kdf:"PBKDF2-SHA-256",iterations:310000,cipher:"AES-256-GCM",salt:bytesToB64(salt),iv:bytesToB64(iv),data:bytesToB64(new Uint8Array(ciphertext))};
+  const blob=new Blob([JSON.stringify(file,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=`tarjeta-entrenador-${data.trainer.name.toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi,"-")||"hoenn"}.hoenn`;document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+  message.textContent="Tarjeta cifrada y descargada. Envía el archivo .hoenn al organizador y comparte la contraseña por separado.";
+ }catch(err){message.textContent="No se pudo cifrar la tarjeta en este navegador. Prueba con una versión actualizada de Chrome, Edge o Firefox."}
+ finally{submit.disabled=false;submit.textContent="🔐 Obtener tarjeta de inscripción"}
+});
+document.querySelector("#form").addEventListener("reset",()=>{setTimeout(()=>{gymInput.value="";message.textContent="";team=Array(6).fill(null);render()},0)});
+</script></body></html>
